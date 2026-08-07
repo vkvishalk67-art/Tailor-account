@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard — Darzi Khata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
+
+<div id="app-shell" class="hidden" style="max-width:1200px; margin:0 auto; padding:32px 24px;">
+  <div class="main-header">
+    <div><h2 class="main-title">🛠 Admin Dashboard</h2><p class="main-sub">Darzi Khata — poora control</p></div>
+    <button class="logout-btn" id="logout-btn" style="color:var(--thread-red)">↩ Logout</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num" id="s-shops">0</div><div class="stat-lbl">Total Shops</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-workers">0</div><div class="stat-lbl">Total Workers</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-active">0</div><div class="stat-lbl">Active Subscriptions</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-pending-pay">0</div><div class="stat-lbl">Pending Payments</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-reports">0</div><div class="stat-lbl">Open Reports</div></div>
+  </div>
+
+  <h3 style="margin:24px 0 12px; color:var(--navy);">Pending Payments</h3>
+  <table class="data-table" style="margin-bottom:32px;">
+    <thead><tr><th>Naam</th><th>Type</th><th>Method</th><th>Reference</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody id="payments-body"></tbody>
+  </table>
+
+  <h3 style="margin-bottom:12px; color:var(--navy);">Open Reports</h3>
+  <table class="data-table" style="margin-bottom:32px;">
+    <thead><tr><th>Reported</th><th>By</th><th>Reason</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody id="reports-body"></tbody>
+  </table>
+
+  <h3 style="margin-bottom:12px; color:var(--navy);">All Shops</h3>
+  <table class="data-table" style="margin-bottom:32px;">
+    <thead><tr><th>Naam</th><th>Email</th><th>Area</th><th>Status</th><th>Trial/Expiry</th><th>Action</th></tr></thead>
+    <tbody id="shops-body"></tbody>
+  </table>
+
+  <h3 style="margin-bottom:12px; color:var(--navy);">All Workers</h3>
+  <table class="data-table">
+    <thead><tr><th>Naam</th><th>Email</th><th>Area</th><th>Availability</th><th>Action</th></tr></thead>
+    <tbody id="workers-body"></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, escapeHtml, formatDate } from './config.js';
+
+const $ = id => document.getElementById(id);
+
+if (SUPABASE_URL.includes('YOUR_SUPABASE')){
+  document.body.innerHTML = '<div class="center-screen"><div class="card"><p>⚠️ config.js mein Supabase keys daalein.</p></div></div>';
+} else {
+  runApp();
+}
+
+async function runApp(){
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session || session.user.email !== ADMIN_EMAIL){ window.location.href = 'index.html'; return; }
+
+  document.getElementById('app-loading').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  $('logout-btn').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href='index.html'; });
+
+  let profiles = [], payments = [], reports = [];
+
+  async function loadAll(){
+    const [{ data: p }, { data: pay }, { data: rep }] = await Promise.all([
+      supabase.from('profiles').select('*'),
+      supabase.from('payments').select('*, profiles(full_name)').eq('status','pending'),
+      supabase.from('reports').select('*').eq('status','open'),
+    ]);
+    profiles = p || []; payments = pay || []; reports = rep || [];
+    render();
+  }
+
+  function render(){
+    const shops = profiles.filter(x=>x.role==='shop');
+    const workers = profiles.filter(x=>x.role==='worker');
+    $('s-shops').textContent = shops.length;
+    $('s-workers').textContent = workers.length;
+    $('s-active').textContent = shops.filter(x=>x.subscription_status==='active').length;
+    $('s-pending-pay').textContent = payments.length;
+    $('s-reports').textContent = reports.length;
+
+    $('payments-body').innerHTML = payments.map(p => `
+      <tr><td>${escapeHtml(p.profiles?.full_name||'—')}</td><td>${p.payment_type}</td><td>${escapeHtml(p.method||'—')}</td><td>${escapeHtml(p.reference||'—')}</td><td>${formatDate(p.created_at)}</td>
+      <td><button data-verify="${p.id}" data-profile="${p.profile_id}" data-type="${p.payment_type}">Verify & Activate</button></td></tr>`).join('') || '<tr><td colspan="6">Koi pending payment nahi</td></tr>';
+
+    $('reports-body').innerHTML = reports.map(r => `
+      <tr><td class="mono" style="font-size:11px">${r.reported_profile.slice(0,8)}</td><td class="mono" style="font-size:11px">${r.reported_by.slice(0,8)}</td><td>${escapeHtml(r.reason)}</td><td>${formatDate(r.created_at)}</td>
+      <td><button data-block="${r.reported_profile}" data-report="${r.id}">Block User</button> <button data-dismiss="${r.id}" style="background:var(--cream-dim);color:var(--ink)">Dismiss</button></td></tr>`).join('') || '<tr><td colspan="5">Koi open report nahi</td></tr>';
+
+    $('shops-body').innerHTML = shops.map(s => `
+      <tr><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.area||'—')}</td>
+      <td><span class="pill ${s.subscription_status==='active'?'pill-green':s.subscription_status==='trial'?'pill-brass':'pill-red'}">${s.subscription_status}${s.is_blocked?' + BLOCKED':''}</span></td>
+      <td>${formatDate(s.trial_end)}</td>
+      <td><button data-extend="${s.id}">+30 din</button> ${s.is_blocked ? `<button data-unblock="${s.id}" style="background:var(--thread-green)">Unblock</button>` : `<button data-blockdirect="${s.id}" style="background:var(--thread-red)">Block</button>`}</td></tr>`).join('');
+
+    $('workers-body').innerHTML = workers.map(w => `
+      <tr><td>${escapeHtml(w.full_name)}</td><td>${escapeHtml(w.email)}</td><td>${escapeHtml(w.area||'—')}</td><td>${w.is_blocked?'BLOCKED':'OK'}</td>
+      <td>${w.is_blocked ? `<button data-unblock="${w.id}" style="background:var(--thread-green)">Unblock</button>` : `<button data-blockdirect="${w.id}" style="background:var(--thread-red)">Block</button>`}</td></tr>`).join('');
+
+    wireButtons();
+  }
+
+  function wireButtons(){
+    document.querySelectorAll('[data-verify]').forEach(b => b.addEventListener('click', async () => {
+      await supabase.from('payments').update({ status:'verified' }).eq('id', b.dataset.verify);
+      if (b.dataset.type === 'subscription'){
+        const newEnd = new Date(); newEnd.setDate(newEnd.getDate()+30);
+        await supabase.from('profiles').update({ subscription_status:'active', trial_end: newEnd.toISOString().split('T')[0] }).eq('id', b.dataset.profile);
+      }
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-extend]').forEach(b => b.addEventListener('click', async () => {
+      const newEnd = new Date(); newEnd.setDate(newEnd.getDate()+30);
+      await supabase.from('profiles').update({ subscription_status:'active', trial_end: newEnd.toISOString().split('T')[0] }).eq('id', b.dataset.extend);
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-blockdirect]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Is user ko block karna hai? Iska CNIC bhi blocked list mein add ho jayega.')) return;
+      const prof = profiles.find(x=>x.id===b.dataset.blockdirect);
+      await supabase.from('profiles').update({ is_blocked:true, blocked_reason:'Admin action' }).eq('id', b.dataset.blockdirect);
+      if (prof?.cnic){ await supabase.from('blocked_cnics').upsert({ cnic: prof.cnic, reason:'Blocked account' }); }
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-unblock]').forEach(b => b.addEventListener('click', async () => {
+      await supabase.from('profiles').update({ is_blocked:false }).eq('id', b.dataset.unblock);
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-block]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Report ke basis pe block karna hai?')) return;
+      const prof = profiles.find(x=>x.id===b.dataset.block);
+      await supabase.from('profiles').update({ is_blocked:true, blocked_reason:'Reported' }).eq('id', b.dataset.block);
+      if (prof?.cnic){ await supabase.from('blocked_cnics').upsert({ cnic: prof.cnic, reason:'Reported & blocked' }); }
+      await supabase.from('reports').update({ status:'action_taken' }).eq('id', b.dataset.report);
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', async () => {
+      await supabase.from('reports').update({ status:'reviewed' }).eq('id', b.dataset.dismiss);
+      await loadAll();
+    }));
+  }
+
+  await loadAll();
+}
+</script>
+</body>
+</html>

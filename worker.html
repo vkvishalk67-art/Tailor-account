@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Worker Dashboard — Darzi Khata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
+
+<div id="app-shell" class="hidden" style="width:100%">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" id="logo-holder"></div>
+        <div class="brand-name">Darzi Khata<span>Worker Panel</span></div>
+      </div>
+      <div class="side-nav">
+        <button data-view="shops" class="active">🧵 Find Shops</button>
+        <button data-view="profile">👤 Meri Profile</button>
+      </div>
+      <button class="logout-btn" id="logout-btn">↩ Logout</button>
+    </aside>
+
+    <main class="main">
+      <!-- ===== SHOPS VIEW ===== -->
+      <div id="view-shops">
+        <div class="main-header"><div><h2 class="main-title">Shops Dhoondein</h2><p class="main-sub">Active shops jo kaam de rahi hain</p></div></div>
+        <div class="safety-note">⚠️ Safety: Kisi se milne se pehle poori tasdeeq kar lein aur apne kisi qareebi ko bata kar jayein. Ye platform sirf rabta karwata hai.</div>
+        <div class="toolbar"><input type="text" class="search-box" id="shop-search" placeholder="Naam ya area se dhoondein…" /></div>
+        <div class="grid" id="shop-grid"></div>
+      </div>
+
+      <!-- ===== PROFILE VIEW ===== -->
+      <div id="view-profile" class="hidden">
+        <div class="main-header"><div><h2 class="main-title">Meri Profile</h2><p class="main-sub">Ye shops ko dikhega</p></div></div>
+        <form id="profile-form" class="tag-card" style="max-width:480px;">
+          <div class="field"><label>Naam</label><input type="text" id="p-name" required /></div>
+          <div class="field"><label>Phone</label><input type="text" id="p-phone" required /></div>
+          <div class="field"><label>Area/Sheher</label><input type="text" id="p-area" required /></div>
+          <div class="field"><label>Skills</label><input type="text" id="p-skills" placeholder="e.g. Kameez stitching, cutting, finishing" /></div>
+          <div class="field"><label>Experience (saal)</label><input type="number" step="0.5" id="p-exp" /></div>
+          <div class="field"><label>Status</label><select id="p-avail"><option value="Available">Available</option><option value="Hired">Hired (kaam mil gaya)</option></select></div>
+          <div id="placement-note" class="hidden msg" style="margin-top:6px;"></div>
+          <button type="submit" class="btn-primary" style="margin-top:8px;">Save Profile</button>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== PLACEMENT FEE MODAL ===== -->
+<div class="modal-overlay hidden" id="fee-modal">
+  <div class="modal" style="max-width:420px">
+    <h3 class="modal-title">Mubarak Ho! 🎉</h3>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:16px;">Job milne pe ek chhota placement fee dena hota hai. Payment ke baad neeche form bharein.</p>
+    <div style="background:var(--cream); border-radius:10px; padding:14px; margin-bottom:12px;">
+      <div style="font-weight:700; color:var(--navy); font-size:13.5px;">📱 JazzCash / EasyPaisa</div>
+      <div class="mono" style="font-size:13.5px;">0300-XXXXXXX (Darzi Khata)</div>
+    </div>
+    <form id="placement-fee-form">
+      <div class="field"><label>Payment Method</label><select id="fee-method"><option>JazzCash/EasyPaisa</option><option>Bank Transfer</option></select></div>
+      <div class="field"><label>Transaction ID</label><input type="text" id="fee-ref" required /></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="skip-fee">Baad Mein</button>
+        <button type="submit" class="btn-primary">Payment Jama Karein</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, logoSVG, escapeHtml, waLink, isCautionArea } from './config.js';
+
+const $ = id => document.getElementById(id);
+document.getElementById('logo-holder').innerHTML = logoSVG(22, false);
+
+if (SUPABASE_URL.includes('YOUR_SUPABASE')){
+  document.body.innerHTML = '<div class="center-screen"><div class="card"><p>⚠️ config.js mein Supabase keys daalein.</p></div></div>';
+} else {
+  runApp();
+}
+
+async function runApp(){
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session){ window.location.href = 'index.html'; return; }
+  const currentUser = session.user;
+  if (currentUser.email === ADMIN_EMAIL){ window.location.href = 'admin.html'; return; }
+
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  if (!profile || profile.role !== 'worker'){ window.location.href = 'shop.html'; return; }
+  if (profile.is_blocked){
+    document.body.innerHTML = '<div class="center-screen"><div class="card"><h2 class="title">Account Blocked</h2><p class="subtitle">Support se rabta karein.</p></div></div>';
+    return;
+  }
+
+  const { data: details } = await supabase.from('worker_details').select('*').eq('worker_id', currentUser.id).maybeSingle();
+
+  document.getElementById('app-loading').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+
+  document.querySelectorAll('.side-nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.side-nav button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      ['shops','profile'].forEach(v => document.getElementById('view-'+v).classList.toggle('hidden', v!==btn.dataset.view));
+    });
+  });
+  $('logout-btn').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href='index.html'; });
+
+  // Prefill profile form
+  $('p-name').value = profile.full_name||''; $('p-phone').value = profile.phone||''; $('p-area').value = profile.area||'';
+  $('p-skills').value = details?.skills||''; $('p-exp').value = details?.experience_years ?? '';
+  $('p-avail').value = details?.availability || 'Available';
+
+  $('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newAvail = $('p-avail').value;
+    const wasHired = details?.availability === 'Hired';
+    await supabase.from('profiles').update({ full_name: $('p-name').value.trim(), phone: $('p-phone').value.trim(), area: $('p-area').value.trim() }).eq('id', currentUser.id);
+    await supabase.from('worker_details').upsert({ worker_id: currentUser.id, skills: $('p-skills').value.trim(), experience_years: $('p-exp').value ? Number($('p-exp').value) : null, availability: newAvail });
+
+    if (newAvail === 'Hired' && !wasHired){
+      $('fee-modal').classList.remove('hidden');
+    } else {
+      const n = $('placement-note'); n.classList.remove('hidden'); n.classList.add('success'); n.textContent = 'Profile save ho gayi!';
+    }
+  });
+
+  $('skip-fee').addEventListener('click', () => $('fee-modal').classList.add('hidden'));
+  $('placement-fee-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await supabase.from('payments').insert({ profile_id: currentUser.id, payment_type: 'placement_fee', method: $('fee-method').value, reference: $('fee-ref').value.trim() });
+    $('fee-modal').classList.add('hidden');
+    alert('Shukriya! Payment jama ho gayi, jald verify hogi.');
+  });
+
+  // ---------- Shop directory ----------
+  let shops = [];
+  async function loadShops(){
+    const { data } = await supabase.from('profiles').select('*').eq('role','shop').eq('subscription_status','active').eq('is_blocked', false);
+    shops = data || [];
+    renderShops();
+  }
+  function renderShops(){
+    const search = $('shop-search').value.trim().toLowerCase();
+    const filtered = shops.filter(s => !search || (s.full_name||'').toLowerCase().includes(search) || (s.area||'').toLowerCase().includes(search));
+    const grid = $('shop-grid');
+    if (filtered.length === 0){ grid.innerHTML = `<div class="empty-state"><div class="em-title">Abhi koi active shop nahi mili</div></div>`; return; }
+    grid.innerHTML = filtered.map(s => `
+      <div class="tag-card">
+        <div style="font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--navy)">${escapeHtml(s.full_name)}</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px">${escapeHtml(s.area||'—')}</div>
+        ${isCautionArea(s.area) ? `<div style="font-size:11px;color:var(--thread-red);margin-top:6px">⚠️ Milne se pehle poori tasdeeq karein</div>` : ''}
+        <div style="display:flex;gap:6px;margin-top:14px;">
+          <button data-contact="${s.id}" class="btn-secondary" style="flex:1;font-size:12px;padding:8px">WhatsApp</button>
+          <button data-report="${s.id}" class="btn-danger" style="flex:1;font-size:12px;padding:8px">Report</button>
+        </div>
+      </div>`).join('');
+    grid.querySelectorAll('[data-contact]').forEach(b => b.addEventListener('click', async () => {
+      const s = shops.find(x=>x.id===b.dataset.contact);
+      await supabase.from('contact_logs').insert({ from_profile: currentUser.id, to_profile: s.id });
+      window.open(waLink(s.phone, `Assalam-o-Alaikum, mera naam ${profile.full_name} hai, mujhe kaam ki talash hai.`), '_blank');
+    }));
+    grid.querySelectorAll('[data-report]').forEach(b => b.addEventListener('click', async () => {
+      const reason = prompt('Report ki wajah likhein:');
+      if (!reason) return;
+      await supabase.from('reports').insert({ reported_by: currentUser.id, reported_profile: b.dataset.report, reason });
+      alert('Report jama ho gayi.');
+    }));
+  }
+  $('shop-search').addEventListener('input', renderShops);
+  await loadShops();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shop Dashboard — Darzi Khata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
+
+<!-- ===== UPGRADE / PAYMENT SCREEN ===== -->
+<div id="upgrade-screen" class="center-screen hidden">
+  <div class="card">
+    <h2 class="title">Trial Khatam Ho Gaya</h2>
+    <p class="subtitle">Account active rakhne ke liye payment karein. Payment ke baad neeche form bharein — 24 ghante mein verify ho jayega.</p>
+    <div style="background:var(--cream); border-radius:10px; padding:14px; margin-bottom:12px;">
+      <div style="font-weight:700; color:var(--navy); font-size:13.5px; margin-bottom:4px;">📱 JazzCash / EasyPaisa</div>
+      <div class="mono" style="font-size:13.5px;">0300-XXXXXXX (Darzi Khata)</div>
+    </div>
+    <div style="background:var(--cream); border-radius:10px; padding:14px; margin-bottom:16px;">
+      <div style="font-weight:700; color:var(--navy); font-size:13.5px; margin-bottom:4px;">🏦 Bank Transfer</div>
+      <div class="mono" style="font-size:13.5px;">Account: XXXX-XXXX-XXXX<br/>Bank: [Naam] — Title: Darzi Khata</div>
+    </div>
+    <form id="payment-claim-form">
+      <div class="field">
+        <label>Payment Method</label>
+        <select id="pay-method"><option>JazzCash/EasyPaisa</option><option>Bank Transfer</option></select>
+      </div>
+      <div class="field"><label>Transaction ID / Reference</label><input type="text" id="pay-ref" required /></div>
+      <button type="submit" class="btn-primary">Maine Payment Kar Diya Hai</button>
+    </form>
+    <div id="pay-msg" class="msg hidden" style="margin-top:12px"></div>
+    <button class="logout-btn" id="upgrade-logout" style="margin-top:14px">↩ Logout</button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app-shell" class="hidden" style="width:100%">
+  <div class="trial-banner hidden" id="trial-banner"></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" id="logo-holder"></div>
+        <div class="brand-name">Darzi Khata<span>Shop Panel</span></div>
+      </div>
+      <div class="side-nav">
+        <button data-view="customers" class="active">👥 Customers</button>
+        <button data-view="fields">📏 Measurement Fields</button>
+        <button data-view="workers">🔍 Find Workers</button>
+        <button data-view="billing">💳 Billing</button>
+      </div>
+      <button class="logout-btn" id="logout-btn">↩ Logout</button>
+    </aside>
+
+    <main class="main">
+      <!-- ===== CUSTOMERS VIEW ===== -->
+      <div id="view-customers">
+        <div class="main-header">
+          <div><h2 class="main-title">Customers</h2><p class="main-sub">Sab customer records yahan hain</p></div>
+          <button class="btn-brass" id="open-add-modal">+ Naya Customer</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">Total Customers</div></div>
+          <div class="stat-box"><div class="stat-num" id="stat-pending">0</div><div class="stat-lbl">Pending</div></div>
+          <div class="stat-box"><div class="stat-num" id="stat-ready">0</div><div class="stat-lbl">Ready</div></div>
+        </div>
+        <div class="toolbar">
+          <input type="text" class="search-box" id="search-input" placeholder="Naam ya phone se dhoondein…" />
+          <select class="search-box" id="status-filter" style="flex:0 0 160px">
+            <option value="">Sab Status</option><option>Pending</option><option>Ready</option><option>Delivered</option>
+          </select>
+        </div>
+        <div class="grid" id="customer-grid"></div>
+      </div>
+
+      <!-- ===== MEASUREMENT FIELDS VIEW ===== -->
+      <div id="view-fields" class="hidden">
+        <div class="main-header">
+          <div><h2 class="main-title">Measurement Fields</h2><p class="main-sub">Apni pasand ke fields banayein — jo bhi naam aap use karte hain</p></div>
+          <button class="btn-brass" id="open-add-field">+ Naya Field</button>
+        </div>
+        <div id="fields-list" style="display:flex; flex-direction:column; gap:8px; max-width:600px;"></div>
+        <p style="font-size:12.5px; color:var(--ink-soft); margin-top:16px;">Ye fields naye customer form mein dikhengi. Tarteeb (order) upar-neeche button se badal sakte hain.</p>
+      </div>
+
+      <!-- ===== WORKERS VIEW ===== -->
+      <div id="view-workers" class="hidden">
+        <div class="main-header">
+          <div><h2 class="main-title">Karigar Dhoondein</h2><p class="main-sub">Available workers ki list</p></div>
+        </div>
+        <div class="safety-note">⚠️ Safety: Kisi se milne se pehle poori tasdeeq kar lein aur apne kisi qareebi ko bata kar jayein. Ye platform sirf rabta karwata hai, milne/kaam ki zimmedari dono taraf ki apni hai.</div>
+        <div class="toolbar"><input type="text" class="search-box" id="worker-search" placeholder="Skill ya area se dhoondein…" /></div>
+        <div class="grid" id="worker-grid"></div>
+      </div>
+
+      <!-- ===== BILLING VIEW ===== -->
+      <div id="view-billing" class="hidden">
+        <div class="main-header"><div><h2 class="main-title">Billing</h2><p class="main-sub">Aapki subscription ki tafseel</p></div></div>
+        <div id="billing-info" class="tag-card" style="max-width:420px;"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== CUSTOMER MODAL ===== -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal">
+    <h3 class="modal-title" id="modal-title">Naya Customer</h3>
+    <form id="customer-form">
+      <input type="hidden" id="cust-id" />
+      <div class="form-grid">
+        <div class="field span-2"><label>Customer Naam *</label><input type="text" id="cust-name" required /></div>
+        <div class="field"><label>Phone Number</label><input type="text" id="cust-phone" placeholder="03XX-XXXXXXX" /></div>
+        <div class="field"><label>Suit Color</label><input type="text" id="cust-color" /></div>
+        <div class="field span-2"><label>Address</label><input type="text" id="cust-address" /></div>
+
+        <div class="field span-2" style="padding-top:8px; border-top:1px dashed var(--cream-dim);">
+          <label style="color:var(--brass); text-transform:uppercase; font-size:11px;">Measurements</label>
+        </div>
+        <div id="dynamic-measurements" class="span-2" style="display:contents;"></div>
+
+        <div class="field"><label>Delivery Date</label><input type="date" id="cust-delivery" /></div>
+        <div class="field"><label>Status</label><select id="cust-status"><option>Pending</option><option>Ready</option><option>Delivered</option></select></div>
+        <div class="field"><label>Total Bill (Rs)</label><input type="number" id="cust-total-bill" /></div>
+        <div class="field"><label>Advance Paid (Rs)</label><input type="number" id="cust-advance" /></div>
+        <div class="field span-2"><label>Notes</label><input type="text" id="cust-notes" /></div>
+        <div class="field span-2"><label>Customer Photo</label><input type="file" id="cust-face-photo" accept="image/*" /><small id="face-photo-status"></small></div>
+        <div class="field span-2"><label>Design Photo</label><input type="file" id="cust-design-photo" accept="image/*" /><small id="design-photo-status"></small></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancel-modal">Cancel</button>
+        <button type="submit" class="btn-primary" id="save-btn">Save Customer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== FIELD MODAL ===== -->
+<div class="modal-overlay hidden" id="field-modal-overlay">
+  <div class="modal" style="max-width:400px">
+    <h3 class="modal-title">Naya Measurement Field</h3>
+    <form id="field-form">
+      <div class="field"><label>Field ka Naam</label><input type="text" id="field-name" required placeholder="e.g. Tera, Bazoo, Gher" /></div>
+      <div class="field"><label>Type</label><select id="field-type"><option value="number">Number (inch)</option><option value="text">Text</option></select></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancel-field-modal">Cancel</button>
+        <button type="submit" class="btn-primary">Add Field</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, logoSVG, escapeHtml, formatDate, waLink, isCautionArea } from './config.js';
+
+const $ = id => document.getElementById(id);
+document.getElementById('logo-holder').innerHTML = logoSVG(22, false);
+
+if (SUPABASE_URL.includes('YOUR_SUPABASE')){
+  document.body.innerHTML = '<div class="center-screen"><div class="card"><p>⚠️ config.js mein Supabase keys daalein.</p></div></div>';
+} else {
+  runApp();
+}
+
+async function runApp(){
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentUser = null, profile = null, customers = [], fields = [], workers = [];
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session){ window.location.href = 'index.html'; return; }
+  currentUser = session.user;
+  if (currentUser.email === ADMIN_EMAIL){ window.location.href = 'admin.html'; return; }
+
+  const { data: prof } = await supabase.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  profile = prof;
+  if (!profile || profile.role !== 'shop'){ window.location.href = 'worker.html'; return; }
+  if (profile.is_blocked){
+    document.body.innerHTML = '<div class="center-screen"><div class="card"><h2 class="title">Account Blocked</h2><p class="subtitle">Support se rabta karein.</p></div></div>';
+    return;
+  }
+
+  document.getElementById('app-loading').classList.add('hidden');
+
+  // ---------- Subscription gate ----------
+  const today = new Date().toISOString().split('T')[0];
+  const isExpired = profile.subscription_status === 'trial' && profile.trial_end && profile.trial_end < today;
+  const isBlockedStatus = profile.subscription_status === 'expired';
+
+  if (isExpired || isBlockedStatus){
+    document.getElementById('upgrade-screen').classList.remove('hidden');
+    $('upgrade-logout').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href='index.html'; });
+    $('payment-claim-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { error } = await supabase.from('payments').insert({
+        profile_id: currentUser.id, payment_type: 'subscription',
+        method: $('pay-method').value, reference: $('pay-ref').value.trim()
+      });
+      const m = $('pay-msg'); m.classList.remove('hidden');
+      if (error){ m.textContent = 'Error: ' + error.message; }
+      else { m.textContent = 'Jama ho gaya! Hum jald verify karenge.'; m.classList.add('success'); $('payment-claim-form').reset(); }
+    });
+    return;
+  }
+
+  document.getElementById('app-shell').classList.remove('hidden');
+
+  // Trial banner
+  if (profile.subscription_status === 'trial'){
+    const daysLeft = Math.ceil((new Date(profile.trial_end) - new Date())/(1000*60*60*24));
+    const banner = $('trial-banner');
+    banner.classList.remove('hidden');
+    banner.innerHTML = `<span>🎁 Trial: ${daysLeft} din baaki</span>`;
+  }
+
+  // ---------- Navigation ----------
+  document.querySelectorAll('.side-nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.side-nav button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['customers','fields','workers','billing'].forEach(v => {
+        document.getElementById('view-'+v).classList.toggle('hidden', v !== btn.dataset.view);
+      });
+      if (btn.dataset.view === 'workers') loadWorkers();
+      if (btn.dataset.view === 'billing') renderBilling();
+    });
+  });
+
+  $('logout-btn').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href='index.html'; });
+
+  // ---------- Measurement Fields ----------
+  async function loadFields(){
+    const { data } = await supabase.from('measurement_fields').select('*').eq('shop_id', currentUser.id).order('field_order');
+    fields = data || [];
+    if (fields.length === 0){
+      // seed defaults on first use
+      const defaults = ['Chest','Waist','Shoulder','Length','Sleeve','Collar','Shalwar Length','Pancha/Mohri'];
+      const rows = defaults.map((name, i) => ({ shop_id: currentUser.id, field_name: name, field_order: i, field_type: 'number' }));
+      const { data: inserted } = await supabase.from('measurement_fields').insert(rows).select();
+      fields = inserted || [];
+    }
+    renderFieldsList();
+    renderDynamicMeasurementInputs();
+  }
+
+  function renderFieldsList(){
+    $('fields-list').innerHTML = fields.map(f => `
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--paper); border:1px solid var(--cream-dim); border-radius:9px; padding:10px 14px;">
+        <span style="font-weight:600; color:var(--navy);">${escapeHtml(f.field_name)} <span style="color:var(--ink-soft); font-weight:400; font-size:12px;">(${f.field_type})</span></span>
+        <button data-remove-field="${f.id}" class="btn-danger">Remove</button>
+      </div>`).join('') || '<p style="color:var(--ink-soft)">Koi field nahi</p>';
+    document.querySelectorAll('[data-remove-field]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Ye field remove karni hai?')) return;
+      await supabase.from('measurement_fields').delete().eq('id', b.dataset.removeField);
+      await loadFields();
+    }));
+  }
+
+  $('open-add-field').addEventListener('click', () => $('field-modal-overlay').classList.remove('hidden'));
+  $('cancel-field-modal').addEventListener('click', () => $('field-modal-overlay').classList.add('hidden'));
+  $('field-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await supabase.from('measurement_fields').insert({
+      shop_id: currentUser.id, field_name: $('field-name').value.trim(),
+      field_type: $('field-type').value, field_order: fields.length
+    });
+    $('field-form').reset();
+    $('field-modal-overlay').classList.add('hidden');
+    await loadFields();
+  });
+
+  function renderDynamicMeasurementInputs(currentValues={}){
+    $('dynamic-measurements').innerHTML = fields.map(f => `
+      <div class="field">
+        <label>${escapeHtml(f.field_name)}</label>
+        <input type="${f.field_type === 'number' ? 'number' : 'text'}" step="0.1" data-measure-field="${f.id}" value="${currentValues[f.id] ?? ''}" />
+      </div>`).join('');
+  }
+
+  // ---------- Customers ----------
+  async function loadCustomers(){
+    const { data } = await supabase.from('customers').select('*').eq('shop_id', currentUser.id).order('created_at', { ascending:false });
+    customers = data || [];
+    renderStats(); renderGrid();
+  }
+  function renderStats(){
+    $('stat-total').textContent = customers.length;
+    $('stat-pending').textContent = customers.filter(c=>c.status==='Pending').length;
+    $('stat-ready').textContent = customers.filter(c=>c.status==='Ready').length;
+  }
+  function isDueSoon(d){ if(!d) return false; return (new Date(d)-new Date())/(1000*60*60*24) <= 3; }
+
+  function renderGrid(){
+    const search = $('search-input').value.trim().toLowerCase();
+    const statusF = $('status-filter').value;
+    const filtered = customers.filter(c => {
+      const ms = !search || (c.name||'').toLowerCase().includes(search) || (c.phone||'').includes(search);
+      const mf = !statusF || c.status === statusF;
+      return ms && mf;
+    });
+    const grid = $('customer-grid');
+    if (filtered.length === 0){
+      grid.innerHTML = `<div class="empty-state"><div class="em-title">Koi customer nahi mila</div><div>Naya customer add karein.</div></div>`;
+      return;
+    }
+    grid.innerHTML = filtered.map(c => {
+      const due = isDueSoon(c.delivery_date) && c.status !== 'Delivered';
+      const total = c.total_bill, advance = c.advance_paid || 0;
+      const remaining = total != null ? total - advance : null;
+      const statusPillClass = c.status==='Pending' ? 'pill-brass' : c.status==='Ready' ? 'pill-green' : 'pill-grey';
+      return `<div class="tag-card">
+        <div style="display:flex;justify-content:space-between;">
+          <div>
+            <div style="font-family:'Fraunces',serif;font-weight:600;font-size:17px;color:var(--navy)">${escapeHtml(c.name)}</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px">${escapeHtml(c.phone||'—')}</div>
+            <span class="pill ${statusPillClass}" style="margin-top:6px;display:inline-block">${c.status}</span>
+          </div>
+          ${c.face_photo_url ? `<img src="${c.face_photo_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover"/>` : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px;color:var(--ink-soft)">
+          <span>${escapeHtml(c.suit_color||'—')}</span>
+          <span class="${due?'mono':'mono'}" style="${due?'color:var(--thread-red);font-weight:700':''}">${formatDate(c.delivery_date)}</span>
+        </div>
+        ${total != null ? `<div style="margin-top:10px;padding:8px 10px;background:var(--cream);border-radius:8px;font-size:12px;display:flex;justify-content:space-between"><span>Bill: Rs ${total}</span><span style="color:${remaining<=0?'var(--thread-green)':'var(--thread-red)'};font-weight:700">${remaining<=0?'Paid':'Rs '+remaining+' due'}</span></div>` : ''}
+        ${c.design_photo_url ? `<img src="${c.design_photo_url}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-top:10px"/>` : ''}
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+          <button data-edit="${c.id}" class="btn-secondary" style="flex:1;padding:8px;font-size:12px">Edit</button>
+          ${c.phone ? `<button data-remind="${c.id}" class="btn-secondary" style="flex:1;padding:8px;font-size:12px;background:rgba(92,122,92,.15);color:var(--thread-green)">WhatsApp</button>` : ''}
+          <button data-del="${c.id}" class="btn-danger" style="flex:1;padding:8px;font-size:12px">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openEditModal(b.dataset.edit)));
+    grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteCustomer(b.dataset.del)));
+    grid.querySelectorAll('[data-remind]').forEach(b => b.addEventListener('click', () => sendReminder(b.dataset.remind)));
+  }
+  $('search-input').addEventListener('input', renderGrid);
+  $('status-filter').addEventListener('change', renderGrid);
+
+  function sendReminder(id){
+    const c = customers.find(x=>x.id===id);
+    if (!c?.phone) return;
+    const msg = `Assalam-o-Alaikum ${c.name}, aapka order (${c.suit_color||'suit'}) ${formatDate(c.delivery_date)} ko ready hoga. Shukriya — ${profile.full_name}`;
+    window.open(waLink(c.phone, msg), '_blank');
+  }
+  async function deleteCustomer(id){
+    if (!confirm('Delete karna hai?')) return;
+    await supabase.from('customers').delete().eq('id', id);
+    await loadCustomers();
+  }
+
+  let currentFacePhotoUrl = null, currentDesignPhotoUrl = null;
+  function openAddModal(){
+    $('modal-title').textContent = 'Naya Customer';
+    $('customer-form').reset(); $('cust-id').value = ''; $('cust-status').value = 'Pending';
+    currentFacePhotoUrl = null; currentDesignPhotoUrl = null;
+    $('face-photo-status').textContent=''; $('design-photo-status').textContent='';
+    renderDynamicMeasurementInputs();
+    $('modal-overlay').classList.remove('hidden');
+  }
+  function openEditModal(id){
+    const c = customers.find(x=>x.id===id); if(!c) return;
+    $('modal-title').textContent = 'Customer Edit Karein';
+    $('cust-id').value = c.id; $('cust-name').value = c.name||''; $('cust-phone').value = c.phone||'';
+    $('cust-color').value = c.suit_color||''; $('cust-address').value = c.address||'';
+    $('cust-delivery').value = c.delivery_date||''; $('cust-status').value = c.status||'Pending';
+    $('cust-total-bill').value = c.total_bill ?? ''; $('cust-advance').value = c.advance_paid ?? '';
+    $('cust-notes').value = c.notes||'';
+    currentFacePhotoUrl = c.face_photo_url||null; currentDesignPhotoUrl = c.design_photo_url||null;
+    $('face-photo-status').textContent = currentFacePhotoUrl ? 'Photo maujood hai' : '';
+    $('design-photo-status').textContent = currentDesignPhotoUrl ? 'Photo maujood hai' : '';
+    renderDynamicMeasurementInputs(c.measurements || {});
+    $('modal-overlay').classList.remove('hidden');
+  }
+  $('open-add-modal').addEventListener('click', openAddModal);
+  $('cancel-modal').addEventListener('click', () => $('modal-overlay').classList.add('hidden'));
+
+  async function uploadPhoto(bucket, file){
+    const filePath = `${currentUser.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from(bucket).upload(filePath, file, { upsert:true });
+    if (error) throw error;
+    return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+  }
+
+  $('customer-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const saveBtn = $('save-btn'); saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+    try{
+      const faceFile = $('cust-face-photo').files[0];
+      if (faceFile){ $('face-photo-status').textContent='Uploading…'; currentFacePhotoUrl = await uploadPhoto('face-photos', faceFile); }
+      const designFile = $('cust-design-photo').files[0];
+      if (designFile){ $('design-photo-status').textContent='Uploading…'; currentDesignPhotoUrl = await uploadPhoto('design-photos', designFile); }
+
+      const measurements = {};
+      document.querySelectorAll('[data-measure-field]').forEach(inp => {
+        if (inp.value !== '') measurements[inp.dataset.measureField] = inp.value;
+      });
+
+      const payload = {
+        shop_id: currentUser.id, name: $('cust-name').value.trim(), phone: $('cust-phone').value.trim(),
+        suit_color: $('cust-color').value.trim(), address: $('cust-address').value.trim(),
+        measurements, delivery_date: $('cust-delivery').value || null, status: $('cust-status').value,
+        total_bill: $('cust-total-bill').value ? Number($('cust-total-bill').value) : null,
+        advance_paid: $('cust-advance').value ? Number($('cust-advance').value) : null,
+        notes: $('cust-notes').value.trim(), face_photo_url: currentFacePhotoUrl, design_photo_url: currentDesignPhotoUrl,
+      };
+      const id = $('cust-id').value;
+      const { error } = id ? await supabase.from('customers').update(payload).eq('id', id) : await supabase.from('customers').insert(payload);
+      if (error) throw error;
+      $('modal-overlay').classList.add('hidden');
+      await loadCustomers();
+    } catch(err){ alert('Error: ' + err.message); }
+    finally{ saveBtn.disabled = false; saveBtn.textContent = 'Save Customer'; }
+  });
+
+  // ---------- Workers directory ----------
+  async function loadWorkers(){
+    const { data } = await supabase.from('profiles').select('*, worker_details(*)').eq('role','worker').eq('is_blocked', false);
+    workers = data || [];
+    renderWorkers();
+  }
+  function renderWorkers(){
+    const search = $('worker-search').value.trim().toLowerCase();
+    const filtered = workers.filter(w => !search || (w.full_name||'').toLowerCase().includes(search) || (w.area||'').toLowerCase().includes(search) || (w.worker_details?.skills||'').toLowerCase().includes(search));
+    const grid = $('worker-grid');
+    if (filtered.length === 0){ grid.innerHTML = `<div class="empty-state"><div class="em-title">Koi worker nahi mila</div></div>`; return; }
+    grid.innerHTML = filtered.map(w => `
+      <div class="tag-card">
+        <div style="font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:var(--navy)">${escapeHtml(w.full_name)}</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px">${escapeHtml(w.area||'—')}</div>
+        ${isCautionArea(w.area) ? `<div style="font-size:11px;color:var(--thread-red);margin-top:6px">⚠️ Milne se pehle poori tasdeeq karein</div>` : ''}
+        <div style="margin-top:8px;font-size:13px;">${escapeHtml(w.worker_details?.skills || 'Skills not listed')}</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px">Experience: ${w.worker_details?.experience_years ?? '—'} saal</div>
+        <span class="pill ${w.worker_details?.availability==='Available'?'pill-green':'pill-grey'}" style="margin-top:8px;display:inline-block">${w.worker_details?.availability||'—'}</span>
+        <div style="display:flex;gap:6px;margin-top:12px;">
+          <button data-contact="${w.id}" class="btn-secondary" style="flex:1;font-size:12px;padding:8px">WhatsApp</button>
+          <button data-report="${w.id}" class="btn-danger" style="flex:1;font-size:12px;padding:8px">Report</button>
+        </div>
+      </div>`).join('');
+    grid.querySelectorAll('[data-contact]').forEach(b => b.addEventListener('click', async () => {
+      const w = workers.find(x=>x.id===b.dataset.contact);
+      await supabase.from('contact_logs').insert({ from_profile: currentUser.id, to_profile: w.id });
+      window.open(waLink(w.phone, `Assalam-o-Alaikum ${w.full_name}, hum ${profile.full_name} se rabta kar rahe hain kaam ke silsile mein.`), '_blank');
+    }));
+    grid.querySelectorAll('[data-report]').forEach(b => b.addEventListener('click', async () => {
+      const reason = prompt('Report ki wajah likhein:');
+      if (!reason) return;
+      await supabase.from('reports').insert({ reported_by: currentUser.id, reported_profile: b.dataset.report, reason });
+      alert('Report jama ho gayi. Hum review karenge.');
+    }));
+  }
+  $('worker-search').addEventListener('input', renderWorkers);
+
+  // ---------- Billing view ----------
+  function renderBilling(){
+    $('billing-info').innerHTML = `
+      <div style="font-weight:700;color:var(--navy);margin-bottom:6px;">Status: ${profile.subscription_status}</div>
+      ${profile.trial_end ? `<div style="font-size:13px;color:var(--ink-soft)">Trial/Expiry Date: ${formatDate(profile.trial_end)}</div>` : ''}
+      <p style="font-size:12.5px;color:var(--ink-soft);margin-top:10px;">Payment ya renewal ke liye trial khatam hone pe automatic screen aayegi.</p>`;
+  }
+
+  await loadFields();
+  await loadCustomers();
+}
+</script>
+</body>
+</html>

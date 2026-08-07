@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Darzi Khata — Tailoring Shop Manager & Job Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
+
+<div class="center-screen hidden" id="auth-screen">
+  <div style="width:100%; max-width:440px;">
+    <div class="card">
+      <div class="logo-mark" id="logo-holder"></div>
+      <div class="eyebrow" style="text-align:center">Darzi Khata</div>
+      <h1 class="title" id="auth-title" style="text-align:center">Khush Aamdeed</h1>
+      <p class="subtitle" id="auth-sub" style="text-align:center">Pehle apna account type chunein</p>
+
+      <div id="auth-msg" class="msg hidden"></div>
+
+      <!-- Role selection (shown before login/signup form) -->
+      <div id="role-select">
+        <div class="role-choice">
+          <button type="button" class="role-btn" id="pick-shop">
+            <div class="ic">🧵</div>
+            <div class="lbl">Shop Owner</div>
+            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Dukan chalata hoon</div>
+          </button>
+          <button type="button" class="role-btn" id="pick-worker">
+            <div class="ic">✂️</div>
+            <div class="lbl">Karigar / Worker</div>
+            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Kaam ki talash hai</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Auth form (shown after role picked) -->
+      <form id="auth-form" class="hidden">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="f-email" required placeholder="aap@example.com" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="f-password" required minlength="6" placeholder="••••••••" />
+        </div>
+
+        <div id="signup-only" class="hidden">
+          <div class="field">
+            <label id="name-label">Shop Name</label>
+            <input type="text" id="f-name" placeholder="" />
+          </div>
+          <div class="field">
+            <label>Phone Number *</label>
+            <input type="text" id="f-phone" placeholder="03XX-XXXXXXX" required />
+          </div>
+          <div class="field">
+            <label>CNIC Number *</label>
+            <input type="text" id="f-cnic" placeholder="XXXXX-XXXXXXX-X" required maxlength="15" />
+            <small>Sirf record ke liye, kisi ko nahi dikhega</small>
+          </div>
+          <div class="field">
+            <label>Area / Sheher *</label>
+            <input type="text" id="f-area" placeholder="e.g. Gulshan, Karachi" required />
+            <small>Exact address nahi — sirf area/sheher, safety ke liye</small>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="auth-submit">Login</button>
+        <button type="button" class="btn-secondary" id="back-to-role" style="width:100%;margin-top:10px">← Wapis</button>
+      </form>
+
+      <div class="hidden" style="text-align:center;margin-top:18px;font-size:13px;color:var(--ink-soft)" id="auth-switch-wrap">
+        <span id="auth-switch-text">Naya account banana hai?</span>
+        <button id="auth-switch-btn" type="button" style="background:none;color:var(--brass);font-weight:600;text-decoration:underline">Sign Up</button>
+      </div>
+    </div>
+
+    <p style="max-width:440px;margin:16px auto 0;font-size:11.5px;color:var(--ink-soft);text-align:center;line-height:1.6">
+      Sign up karke aap hamare <a href="terms.html" style="color:var(--brass);text-decoration:underline">Terms & Conditions</a> se ittefaq karte hain.
+    </p>
+    <p class="hidden" id="setup-note" style="max-width:440px;margin:10px auto 0;font-size:12px;color:var(--thread-red);text-align:center;line-height:1.6"></p>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, logoSVG, isValidCnic, normalizeCnic, checkCnicBlocked } from './config.js';
+
+document.getElementById('logo-holder').innerHTML = logoSVG(44, true);
+
+const $ = id => document.getElementById(id);
+const loading = $('app-loading');
+const authScreen = $('auth-screen');
+
+if (SUPABASE_URL.includes('YOUR_SUPABASE') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE')){
+  loading.classList.add('hidden');
+  authScreen.classList.remove('hidden');
+  $('setup-note').classList.remove('hidden');
+  $('setup-note').textContent = '⚠️ Setup baaki hai: config.js mein SUPABASE_URL aur SUPABASE_ANON_KEY daalein.';
+} else {
+  runApp();
+}
+
+function runApp(){
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let role = null;
+  let isSignup = false;
+
+  function showMsg(text, success=false){
+    const m = $('auth-msg');
+    m.textContent = text; m.classList.remove('hidden'); m.classList.toggle('success', success);
+  }
+  function hideMsg(){ $('auth-msg').classList.add('hidden'); }
+
+  function selectRole(r){
+    role = r;
+    $('role-select').classList.add('hidden');
+    $('auth-form').classList.remove('hidden');
+    $('auth-switch-wrap').classList.remove('hidden');
+    $('name-label').textContent = r === 'shop' ? 'Shop Name' : 'Aapka Poora Naam';
+    $('f-name').placeholder = r === 'shop' ? 'e.g. Al-Karam Tailors' : 'e.g. Ahmed Ali';
+    $('auth-sub').textContent = r === 'shop' ? 'Shop Owner ke liye' : 'Karigar/Worker ke liye';
+  }
+  $('pick-shop').addEventListener('click', () => selectRole('shop'));
+  $('pick-worker').addEventListener('click', () => selectRole('worker'));
+
+  $('back-to-role').addEventListener('click', () => {
+    role = null; hideMsg();
+    $('auth-form').classList.add('hidden');
+    $('auth-switch-wrap').classList.add('hidden');
+    $('role-select').classList.remove('hidden');
+    $('auth-sub').textContent = 'Pehle apna account type chunein';
+  });
+
+  $('auth-switch-btn').addEventListener('click', () => {
+    isSignup = !isSignup;
+    $('auth-title').textContent = isSignup ? 'Naya Account Banayein' : 'Login';
+    $('auth-submit').textContent = isSignup ? 'Sign Up' : 'Login';
+    $('auth-switch-text').textContent = isSignup ? 'Pehle se account hai?' : 'Naya account banana hai?';
+    $('auth-switch-btn').textContent = isSignup ? 'Login' : 'Sign Up';
+    $('signup-only').classList.toggle('hidden', !isSignup);
+    hideMsg();
+  });
+
+  $('auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideMsg();
+    const email = $('f-email').value.trim();
+    const password = $('f-password').value;
+    const btn = $('auth-submit');
+    btn.disabled = true;
+
+    try{
+      if (isSignup){
+        const name = $('f-name').value.trim();
+        const phone = $('f-phone').value.trim();
+        const cnic = $('f-cnic').value.trim();
+        const area = $('f-area').value.trim();
+
+        if (!isValidCnic(cnic)){ throw new Error('CNIC 13 digit ka hona chahiye.'); }
+        if (!name || !phone || !area){ throw new Error('Sab required fields bharein.'); }
+
+        const blocked = await checkCnicBlocked(supabase, cnic);
+        if (blocked){ throw new Error('Ye account create nahi ho sakta. Support se rabta karein.'); }
+
+        const { data: signUpData, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+
+        if (signUpData.user){
+          const trialEnd = new Date();
+          trialEnd.setDate(trialEnd.getDate() + 30);
+          const profilePayload = {
+            id: signUpData.user.id,
+            role,
+            full_name: name,
+            email,
+            phone,
+            cnic: normalizeCnic(cnic),
+            area,
+            subscription_status: role === 'shop' ? 'trial' : 'active',
+            trial_end: role === 'shop' ? trialEnd.toISOString().split('T')[0] : null,
+          };
+          const { error: profErr } = await supabase.from('profiles').upsert(profilePayload);
+          if (profErr) throw profErr;
+
+          if (role === 'worker'){
+            await supabase.from('worker_details').upsert({ worker_id: signUpData.user.id, availability: 'Available' });
+          }
+        }
+        showMsg('Account ban gaya! Ab login karein.', true);
+        isSignup = false;
+        $('auth-switch-btn').click();
+        $('auth-form').reset();
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        // Redirect based on role stored in profile
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
+        if (profile?.role === 'worker'){ window.location.href = 'worker.html'; }
+        else if (data.user.email === (await import('./config.js')).ADMIN_EMAIL){ window.location.href = 'admin.html'; }
+        else { window.location.href = 'shop.html'; }
+      }
+    } catch(err){
+      showMsg(err.message || 'Kuch ghalat hua, dobara koshish karein.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // If already logged in, redirect straight away
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    loading.classList.add('hidden');
+    if (session && session.user){
+      const { ADMIN_EMAIL } = await import('./config.js');
+      if (session.user.email === ADMIN_EMAIL){ window.location.href = 'admin.html'; return; }
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+      if (profile?.role === 'worker'){ window.location.href = 'worker.html'; }
+      else { window.location.href = 'shop.html'; }
+    } else {
+      authScreen.classList.remove('hidden');
+    }
+  });
+}
+</script>
+</body>
+</html>
