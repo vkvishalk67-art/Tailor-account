@@ -271,11 +271,12 @@ async function runApp(){
   });
   $('field-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    await supabase.from('measurement_fields').insert({
+    const { error } = await supabase.from('measurement_fields').insert({
       shop_id: currentUser.id, field_name: $('field-name').value.trim(),
       field_type: $('field-type').value, field_order: fields.length,
       field_options: $('field-type').value === 'choice' ? $('field-options').value.trim() : null
     });
+    if (error){ alert('Field save nahi hui: ' + error.message); return; }
     $('field-form').reset();
     $('field-options-wrap').classList.add('hidden');
     $('field-modal-overlay').classList.add('hidden');
