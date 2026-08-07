@@ -144,8 +144,12 @@
   <div class="modal" style="max-width:400px">
     <h3 class="modal-title">Naya Measurement Field</h3>
     <form id="field-form">
-      <div class="field"><label>Field ka Naam</label><input type="text" id="field-name" required placeholder="e.g. Tera, Bazoo, Gher" /></div>
-      <div class="field"><label>Type</label><select id="field-type"><option value="number">Number (inch)</option><option value="text">Text</option></select></div>
+      <div class="field"><label>Field ka Naam</label><input type="text" id="field-name" required placeholder="e.g. Tera, Bazoo, Stitch Type" /></div>
+      <div class="field"><label>Type</label><select id="field-type"><option value="number">Number (inch)</option><option value="text">Text</option><option value="choice">Tick Option (jaise Single/Double)</option></select></div>
+      <div class="field hidden" id="field-options-wrap">
+        <label>Options (comma se alag karein)</label>
+        <input type="text" id="field-options" placeholder="e.g. Single, Double" />
+      </div>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" id="cancel-field-modal">Cancel</button>
         <button type="submit" class="btn-primary">Add Field</button>
@@ -250,7 +254,7 @@ async function runApp(){
   function renderFieldsList(){
     $('fields-list').innerHTML = fields.map(f => `
       <div style="display:flex; align-items:center; justify-content:space-between; background:var(--paper); border:1px solid var(--cream-dim); border-radius:9px; padding:10px 14px;">
-        <span style="font-weight:600; color:var(--navy);">${escapeHtml(f.field_name)} <span style="color:var(--ink-soft); font-weight:400; font-size:12px;">(${f.field_type})</span></span>
+        <span style="font-weight:600; color:var(--navy);">${escapeHtml(f.field_name)} <span style="color:var(--ink-soft); font-weight:400; font-size:12px;">(${f.field_type}${f.field_options ? ': ' + escapeHtml(f.field_options) : ''})</span></span>
         <button data-remove-field="${f.id}" class="btn-danger">Remove</button>
       </div>`).join('') || '<p style="color:var(--ink-soft)">Koi field nahi</p>';
     document.querySelectorAll('[data-remove-field]').forEach(b => b.addEventListener('click', async () => {
@@ -262,23 +266,53 @@ async function runApp(){
 
   $('open-add-field').addEventListener('click', () => $('field-modal-overlay').classList.remove('hidden'));
   $('cancel-field-modal').addEventListener('click', () => $('field-modal-overlay').classList.add('hidden'));
+  $('field-type').addEventListener('change', () => {
+    $('field-options-wrap').classList.toggle('hidden', $('field-type').value !== 'choice');
+  });
   $('field-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     await supabase.from('measurement_fields').insert({
       shop_id: currentUser.id, field_name: $('field-name').value.trim(),
-      field_type: $('field-type').value, field_order: fields.length
+      field_type: $('field-type').value, field_order: fields.length,
+      field_options: $('field-type').value === 'choice' ? $('field-options').value.trim() : null
     });
     $('field-form').reset();
+    $('field-options-wrap').classList.add('hidden');
     $('field-modal-overlay').classList.add('hidden');
     await loadFields();
   });
 
   function renderDynamicMeasurementInputs(currentValues={}){
-    $('dynamic-measurements').innerHTML = fields.map(f => `
-      <div class="field">
+    $('dynamic-measurements').innerHTML = fields.map(f => {
+      if (f.field_type === 'choice'){
+        const opts = (f.field_options || '').split(',').map(o => o.trim()).filter(Boolean);
+        return `<div class="field">
+          <label>${escapeHtml(f.field_name)}</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" data-choice-group="${f.id}">
+            ${opts.map(o => `<button type="button" class="btn-secondary tick-opt" data-field="${f.id}" data-value="${escapeHtml(o)}" style="padding:8px 14px; font-size:13px; ${currentValues[f.id]===o ? 'background:var(--brass);color:var(--navy);font-weight:700;' : ''}">${currentValues[f.id]===o ? '✓ ' : ''}${escapeHtml(o)}</button>`).join('')}
+          </div>
+        </div>`;
+      }
+      return `<div class="field">
         <label>${escapeHtml(f.field_name)}</label>
         <input type="${f.field_type === 'number' ? 'number' : 'text'}" step="0.1" data-measure-field="${f.id}" value="${currentValues[f.id] ?? ''}" />
-      </div>`).join('');
+      </div>`;
+    }).join('');
+
+    // Wire up tick buttons
+    document.querySelectorAll('.tick-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = document.querySelector(`[data-choice-group="${btn.dataset.field}"]`);
+        group.querySelectorAll('.tick-opt').forEach(b => {
+          b.style.background=''; b.style.color=''; b.style.fontWeight='';
+          b.textContent = b.dataset.value;
+          b.dataset.selected = '';
+        });
+        btn.style.background = 'var(--brass)'; btn.style.color = 'var(--navy)'; btn.style.fontWeight = '700';
+        btn.textContent = '✓ ' + btn.dataset.value;
+        btn.dataset.selected = 'true';
+      });
+    });
   }
 
   // ---------- Customers ----------
@@ -399,6 +433,9 @@ async function runApp(){
       const measurements = {};
       document.querySelectorAll('[data-measure-field]').forEach(inp => {
         if (inp.value !== '') measurements[inp.dataset.measureField] = inp.value;
+      });
+      document.querySelectorAll('.tick-opt[data-selected="true"]').forEach(btn => {
+        measurements[btn.dataset.field] = btn.dataset.value;
       });
 
       const payload = {
