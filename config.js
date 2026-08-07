@@ -1,10 +1,6 @@
-// ==========================================================
-// SETUP: Paste your Supabase Project URL, Anon Key, and your
-// own admin email below. Same values used across all pages.
-// ==========================================================
-export const SUPABASE_URL = "YOUR_SUPABASE_URL";
-export const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
-export const ADMIN_EMAIL = "YOUR_ADMIN_EMAIL@example.com";
+export const SUPABASE_URL = "https://wytriovphlaqohvspkbu.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_I8JbMcnSnuV_AZLNR3Gl_A_LcE2T5iA";
+export const ADMIN_EMAIL = "vkvishalk67@gmail.com";
 
 export function logoSVG(size=34, dark=true){
   const ring = dark ? '#B8863B' : '#1B2333';
@@ -45,8 +41,6 @@ export function waLink(phone, message){
   return `https://wa.me/${num}?text=${encodeURIComponent(message)}`;
 }
 
-// Daily-appropriate check: is a Pakistani area considered higher-risk for in-person meetings?
-// Used only to show an extra safety reminder — never to block or restrict access.
 const CAUTION_AREAS = ['balochistan','quetta','turbat','khuzdar','kech','panjgur','waziristan','kurram'];
 export function isCautionArea(areaText){
   const a = (areaText || '').toLowerCase();
