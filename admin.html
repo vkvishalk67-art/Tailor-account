@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Darzi Khata — Tailoring Shop Manager & Job Marketplace</title>
+<title>Admin Dashboard — Darzi Khata</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -12,284 +12,148 @@
 
 <div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
 
-<div id="action-loading" class="hidden" style="position:fixed; inset:0; background:rgba(243,235,221,0.92); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; z-index:998;">
-  <div class="spool"></div>
-  <div id="action-loading-text" style="font-size:14px; color:var(--navy); font-weight:600;">Login ho raha hai…</div>
-</div>
-
-<div class="center-screen hidden" id="auth-screen">
-  <div style="width:100%; max-width:440px;">
-    <div class="card">
-      <div class="logo-mark" id="logo-holder"></div>
-      <div class="eyebrow" style="text-align:center">Darzi Khata</div>
-      <h1 class="title" id="auth-title" style="text-align:center">Khush Aamdeed</h1>
-      <p class="subtitle" id="auth-sub" style="text-align:center">Pehle apna account type chunein</p>
-
-      <div id="auth-msg" class="msg hidden"></div>
-
-      <!-- Role selection (shown before login/signup form) -->
-      <div id="role-select">
-        <div class="role-choice">
-          <button type="button" class="role-btn" id="pick-shop">
-            <div class="ic">🧵</div>
-            <div class="lbl">Shop Owner</div>
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Dukan chalata hoon</div>
-          </button>
-          <button type="button" class="role-btn" id="pick-worker">
-            <div class="ic">✂️</div>
-            <div class="lbl">Karigar / Worker</div>
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Kaam ki talash hai</div>
-          </button>
-        </div>
-      </div>
-
-      <!-- Auth form (shown after role picked) -->
-      <form id="auth-form" class="hidden">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="f-email" required placeholder="aap@example.com" />
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <div style="position:relative;">
-            <input type="password" id="f-password" required minlength="6" placeholder="••••••••" style="padding-right:70px;" />
-            <button type="button" id="toggle-password" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; padding:6px 8px; font-size:12px; color:var(--brass); font-weight:600;">Show</button>
-          </div>
-        </div>
-        <div id="forgot-password-wrap" style="text-align:right; margin-top:-8px; margin-bottom:14px;">
-          <button type="button" id="forgot-password-btn" style="background:none; color:var(--ink-soft); font-size:12px; text-decoration:underline;">Password bhool gaye?</button>
-        </div>
-
-        <div id="signup-only" class="hidden">
-          <div class="field">
-            <label id="name-label">Shop Name</label>
-            <input type="text" id="f-name" placeholder="" />
-          </div>
-          <div class="field">
-            <label>Phone Number *</label>
-            <input type="text" id="f-phone" placeholder="03XX-XXXXXXX" required />
-          </div>
-          <div class="field">
-            <label>CNIC Number *</label>
-            <input type="text" id="f-cnic" placeholder="XXXXX-XXXXXXX-X" required maxlength="15" />
-            <small>Sirf record ke liye, kisi ko nahi dikhega</small>
-          </div>
-          <div class="field">
-            <label>Area / Sheher *</label>
-            <input type="text" id="f-area" placeholder="e.g. Gulshan, Karachi" required />
-            <small>Exact address nahi — sirf area/sheher, safety ke liye</small>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary" id="auth-submit">Login</button>
-        <button type="button" class="btn-secondary" id="back-to-role" style="width:100%;margin-top:10px">← Wapis</button>
-      </form>
-
-      <div class="hidden" style="text-align:center;margin-top:18px;font-size:13px;color:var(--ink-soft)" id="auth-switch-wrap">
-        <span id="auth-switch-text">Naya account banana hai?</span>
-        <button id="auth-switch-btn" type="button" style="background:none;color:var(--brass);font-weight:600;text-decoration:underline">Sign Up</button>
-      </div>
-    </div>
-
-    <p style="max-width:440px;margin:16px auto 0;font-size:11.5px;color:var(--ink-soft);text-align:center;line-height:1.6">
-      Sign up karke aap hamare <a href="terms.html" style="color:var(--brass);text-decoration:underline">Terms & Conditions</a> se ittefaq karte hain.
-    </p>
-    <p class="hidden" id="setup-note" style="max-width:440px;margin:10px auto 0;font-size:12px;color:var(--thread-red);text-align:center;line-height:1.6"></p>
+<div id="app-shell" class="hidden" style="max-width:1200px; margin:0 auto; padding:32px 24px;">
+  <div class="main-header">
+    <div><h2 class="main-title">🛠 Admin Dashboard</h2><p class="main-sub">Darzi Khata — poora control</p></div>
+    <button class="logout-btn" id="logout-btn" style="color:var(--thread-red)">↩ Logout</button>
   </div>
+
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num" id="s-shops">0</div><div class="stat-lbl">Total Shops</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-workers">0</div><div class="stat-lbl">Total Workers</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-active">0</div><div class="stat-lbl">Active Subscriptions</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-pending-pay">0</div><div class="stat-lbl">Pending Payments</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-reports">0</div><div class="stat-lbl">Open Reports</div></div>
+  </div>
+
+  <h3 style="margin:24px 0 12px; color:var(--navy);">Pending Payments</h3>
+  <table class="data-table" style="margin-bottom:32px;">
+    <thead><tr><th>Naam</th><th>Type</th><th>Method</th><th>Reference</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody id="payments-body"></tbody>
+  </table>
+
+  <h3 style="margin-bottom:12px; color:var(--navy);">Open Reports</h3>
+  <table class="data-table" style="margin-bottom:32px;">
+    <thead><tr><th>Reported</th><th>By</th><th>Reason</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody id="reports-body"></tbody>
+  </table>
+
+  <h3 style="margin-bottom:12px; color:var(--navy);">All Shops</h3>
+  <table class="data-table" style="margin-bottom:32px;">
+    <thead><tr><th>Naam</th><th>Email</th><th>Area</th><th>Status</th><th>Trial/Expiry</th><th>Action</th></tr></thead>
+    <tbody id="shops-body"></tbody>
+  </table>
+
+  <h3 style="margin-bottom:12px; color:var(--navy);">All Workers</h3>
+  <table class="data-table">
+    <thead><tr><th>Naam</th><th>Email</th><th>Area</th><th>Availability</th><th>Action</th></tr></thead>
+    <tbody id="workers-body"></tbody>
+  </table>
 </div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, logoSVG, isValidCnic, normalizeCnic, checkCnicBlocked } from './config.js';
-
-document.getElementById('logo-holder').innerHTML = logoSVG(44, true);
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, escapeHtml, formatDate } from './config.js';
 
 const $ = id => document.getElementById(id);
-const loading = $('app-loading');
-const authScreen = $('auth-screen');
 
-if (SUPABASE_URL.includes('YOUR_SUPABASE') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE')){
-  loading.classList.add('hidden');
-  authScreen.classList.remove('hidden');
-  $('setup-note').classList.remove('hidden');
-  $('setup-note').textContent = '⚠️ Setup baaki hai: config.js mein SUPABASE_URL aur SUPABASE_ANON_KEY daalein.';
+if (SUPABASE_URL.includes('YOUR_SUPABASE')){
+  document.body.innerHTML = '<div class="center-screen"><div class="card"><p>⚠️ config.js mein Supabase keys daalein.</p></div></div>';
 } else {
   runApp();
 }
 
-function runApp(){
+async function runApp(){
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let role = null;
-  let isSignup = false;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session || session.user.email !== ADMIN_EMAIL){ window.location.href = 'index.html'; return; }
 
-  function showMsg(text, success=false){
-    const m = $('auth-msg');
-    m.textContent = text; m.classList.remove('hidden'); m.classList.toggle('success', success);
-  }
-  function hideMsg(){ $('auth-msg').classList.add('hidden'); }
+  document.getElementById('app-loading').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  $('logout-btn').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href='index.html'; });
 
-  function selectRole(r){
-    role = r;
-    $('role-select').classList.add('hidden');
-    $('auth-form').classList.remove('hidden');
-    $('auth-switch-wrap').classList.remove('hidden');
-    $('name-label').textContent = r === 'shop' ? 'Shop Name' : 'Aapka Poora Naam';
-    $('f-name').placeholder = r === 'shop' ? 'e.g. Al-Karam Tailors' : 'e.g. Ahmed Ali';
-    $('auth-sub').textContent = r === 'shop' ? 'Shop Owner ke liye' : 'Karigar/Worker ke liye';
-  }
-  $('pick-shop').addEventListener('click', () => selectRole('shop'));
-  $('pick-worker').addEventListener('click', () => selectRole('worker'));
+  let profiles = [], payments = [], reports = [];
 
-  $('back-to-role').addEventListener('click', () => {
-    role = null; hideMsg();
-    $('auth-form').classList.add('hidden');
-    $('auth-switch-wrap').classList.add('hidden');
-    $('role-select').classList.remove('hidden');
-    $('auth-sub').textContent = 'Pehle apna account type chunein';
-  });
-
-  $('auth-switch-btn').addEventListener('click', () => {
-    isSignup = !isSignup;
-    $('auth-title').textContent = isSignup ? 'Naya Account Banayein' : 'Login';
-    $('auth-submit').textContent = isSignup ? 'Sign Up' : 'Login';
-    $('auth-switch-text').textContent = isSignup ? 'Pehle se account hai?' : 'Naya account banana hai?';
-    $('auth-switch-btn').textContent = isSignup ? 'Login' : 'Sign Up';
-    $('signup-only').classList.toggle('hidden', !isSignup);
-    hideMsg();
-  });
-
-  $('toggle-password').addEventListener('click', () => {
-    const pwd = $('f-password');
-    const showing = pwd.type === 'text';
-    pwd.type = showing ? 'password' : 'text';
-    $('toggle-password').textContent = showing ? 'Show' : 'Hide';
-  });
-
-  $('forgot-password-btn').addEventListener('click', async () => {
-    const email = $('f-email').value.trim();
-    if (!email){ showMsg('Pehle apni email likhein, phir "Password bhool gaye" dabayein.'); return; }
-    showActionLoading('Reset link bheja ja raha hai…');
-    try{
-      const { error } = await withTimeout(
-        supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname.replace('index.html','') + 'reset-password.html' }),
-        15000, 'Reset link bhejna'
-      );
-      hideActionLoading();
-      if (error) throw error;
-      showMsg('Reset link aapki email pe bhej diya gaya hai. Email check karein.', true);
-    } catch(err){
-      hideActionLoading();
-      showMsg(err.message || 'Reset link nahi bhej saka.');
-    }
-  });
-
-  function withTimeout(promise, ms, label){
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} mein zyada time lag raha hai. Internet check karein ya dobara try karein.`)), ms))
+  async function loadAll(){
+    const [{ data: p }, { data: pay }, { data: rep }] = await Promise.all([
+      supabase.from('profiles').select('*'),
+      supabase.from('payments').select('*, profiles(full_name)').eq('status','pending'),
+      supabase.from('reports').select('*').eq('status','open'),
     ]);
+    profiles = p || []; payments = pay || []; reports = rep || [];
+    render();
   }
 
-  let loadingShownAt = 0;
-  function showActionLoading(text){
-    $('action-loading-text').textContent = text;
-    $('action-loading').classList.remove('hidden');
-    $('action-loading').style.display = 'flex';
-    loadingShownAt = Date.now();
+  function render(){
+    const shops = profiles.filter(x=>x.role==='shop');
+    const workers = profiles.filter(x=>x.role==='worker');
+    $('s-shops').textContent = shops.length;
+    $('s-workers').textContent = workers.length;
+    $('s-active').textContent = shops.filter(x=>x.subscription_status==='active').length;
+    $('s-pending-pay').textContent = payments.length;
+    $('s-reports').textContent = reports.length;
+
+    $('payments-body').innerHTML = payments.map(p => `
+      <tr><td>${escapeHtml(p.profiles?.full_name||'—')}</td><td>${p.payment_type}</td><td>${escapeHtml(p.method||'—')}</td><td>${escapeHtml(p.reference||'—')}</td><td>${formatDate(p.created_at)}</td>
+      <td><button data-verify="${p.id}" data-profile="${p.profile_id}" data-type="${p.payment_type}">Verify & Activate</button></td></tr>`).join('') || '<tr><td colspan="6">Koi pending payment nahi</td></tr>';
+
+    $('reports-body').innerHTML = reports.map(r => `
+      <tr><td class="mono" style="font-size:11px">${r.reported_profile.slice(0,8)}</td><td class="mono" style="font-size:11px">${r.reported_by.slice(0,8)}</td><td>${escapeHtml(r.reason)}</td><td>${formatDate(r.created_at)}</td>
+      <td><button data-block="${r.reported_profile}" data-report="${r.id}">Block User</button> <button data-dismiss="${r.id}" style="background:var(--cream-dim);color:var(--ink)">Dismiss</button></td></tr>`).join('') || '<tr><td colspan="5">Koi open report nahi</td></tr>';
+
+    $('shops-body').innerHTML = shops.map(s => `
+      <tr><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.area||'—')}</td>
+      <td><span class="pill ${s.subscription_status==='active'?'pill-green':s.subscription_status==='trial'?'pill-brass':'pill-red'}">${s.subscription_status}${s.is_blocked?' + BLOCKED':''}</span></td>
+      <td>${formatDate(s.trial_end)}</td>
+      <td><button data-extend="${s.id}">+30 din</button> ${s.is_blocked ? `<button data-unblock="${s.id}" style="background:var(--thread-green)">Unblock</button>` : `<button data-blockdirect="${s.id}" style="background:var(--thread-red)">Block</button>`}</td></tr>`).join('');
+
+    $('workers-body').innerHTML = workers.map(w => `
+      <tr><td>${escapeHtml(w.full_name)}</td><td>${escapeHtml(w.email)}</td><td>${escapeHtml(w.area||'—')}</td><td>${w.is_blocked?'BLOCKED':'OK'}</td>
+      <td>${w.is_blocked ? `<button data-unblock="${w.id}" style="background:var(--thread-green)">Unblock</button>` : `<button data-blockdirect="${w.id}" style="background:var(--thread-red)">Block</button>`}</td></tr>`).join('');
+
+    wireButtons();
   }
-  async function hideActionLoading(){
-    const elapsed = Date.now() - loadingShownAt;
-    const minTime = 500;
-    if (elapsed < minTime){ await new Promise(r => setTimeout(r, minTime - elapsed)); }
-    $('action-loading').classList.add('hidden');
-  }
 
-  $('auth-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideMsg();
-    const email = $('f-email').value.trim();
-    const password = $('f-password').value;
-    const btn = $('auth-submit');
-    btn.disabled = true;
-    showActionLoading(isSignup ? 'Sign Up ho raha hai…' : 'Login ho raha hai…');
-
-    try{
-      if (isSignup){
-        const name = $('f-name').value.trim();
-        const phone = $('f-phone').value.trim();
-        const cnic = $('f-cnic').value.trim();
-        const area = $('f-area').value.trim();
-
-        if (!isValidCnic(cnic)){ throw new Error('CNIC 13 digit ka hona chahiye.'); }
-        if (!name || !phone || !area){ throw new Error('Sab required fields bharein.'); }
-
-        showActionLoading('CNIC check ho raha hai…');
-        const blocked = await withTimeout(checkCnicBlocked(supabase, cnic), 15000, 'CNIC check');
-        if (blocked){ throw new Error('Ye account create nahi ho sakta. Support se rabta karein.'); }
-
-        showActionLoading('Account ban raha hai…');
-        const { data: signUpData, error } = await withTimeout(supabase.auth.signUp({ email, password }), 15000, 'Sign up');
-        if (error) throw error;
-
-        if (signUpData.user){
-          const trialEnd = new Date();
-          trialEnd.setDate(trialEnd.getDate() + 30);
-          const profilePayload = {
-            id: signUpData.user.id,
-            role,
-            full_name: name,
-            email,
-            phone,
-            cnic: normalizeCnic(cnic),
-            area,
-            subscription_status: role === 'shop' ? 'trial' : 'active',
-            trial_end: role === 'shop' ? trialEnd.toISOString().split('T')[0] : null,
-          };
-          showActionLoading('Profile save ho raha hai…');
-          const { error: profErr } = await withTimeout(supabase.from('profiles').upsert(profilePayload), 15000, 'Profile save');
-          if (profErr) throw profErr;
-
-          if (role === 'worker'){
-            await withTimeout(supabase.from('worker_details').upsert({ worker_id: signUpData.user.id, availability: 'Available' }), 15000, 'Worker details save');
-          }
-        }
-        hideActionLoading();
-        showMsg('Account ban gaya! Ab login karein.', true);
-        isSignup = false;
-        $('auth-switch-btn').click();
-        $('auth-form').reset();
-      } else {
-        showActionLoading('Sign in ho raha hai…');
-        const { data, error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 15000, 'Login');
-        if (error) throw error;
-        if (data.user.email === ADMIN_EMAIL){ showActionLoading('Admin panel khul raha hai…'); window.location.href = 'admin.html'; return; }
-        showActionLoading('Profile load ho raha hai…');
-        const { data: profile } = await withTimeout(supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle(), 15000, 'Profile load');
-        showActionLoading('Dashboard khul raha hai…');
-        if (profile?.role === 'worker'){ window.location.href = 'worker.html'; }
-        else { window.location.href = 'shop.html'; }
+  function wireButtons(){
+    document.querySelectorAll('[data-verify]').forEach(b => b.addEventListener('click', async () => {
+      await supabase.from('payments').update({ status:'verified' }).eq('id', b.dataset.verify);
+      if (b.dataset.type === 'subscription'){
+        const newEnd = new Date(); newEnd.setDate(newEnd.getDate()+30);
+        await supabase.from('profiles').update({ subscription_status:'active', trial_end: newEnd.toISOString().split('T')[0] }).eq('id', b.dataset.profile);
       }
-    } catch(err){
-      hideActionLoading();
-      showMsg(err.message || 'Kuch ghalat hua, dobara koshish karein.');
-    } finally {
-      btn.disabled = false;
-    }
-  });
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-extend]').forEach(b => b.addEventListener('click', async () => {
+      const newEnd = new Date(); newEnd.setDate(newEnd.getDate()+30);
+      await supabase.from('profiles').update({ subscription_status:'active', trial_end: newEnd.toISOString().split('T')[0] }).eq('id', b.dataset.extend);
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-blockdirect]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Is user ko block karna hai? Iska CNIC bhi blocked list mein add ho jayega.')) return;
+      const prof = profiles.find(x=>x.id===b.dataset.blockdirect);
+      await supabase.from('profiles').update({ is_blocked:true, blocked_reason:'Admin action' }).eq('id', b.dataset.blockdirect);
+      if (prof?.cnic){ await supabase.from('blocked_cnics').upsert({ cnic: prof.cnic, reason:'Blocked account' }); }
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-unblock]').forEach(b => b.addEventListener('click', async () => {
+      await supabase.from('profiles').update({ is_blocked:false }).eq('id', b.dataset.unblock);
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-block]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Report ke basis pe block karna hai?')) return;
+      const prof = profiles.find(x=>x.id===b.dataset.block);
+      await supabase.from('profiles').update({ is_blocked:true, blocked_reason:'Reported' }).eq('id', b.dataset.block);
+      if (prof?.cnic){ await supabase.from('blocked_cnics').upsert({ cnic: prof.cnic, reason:'Reported & blocked' }); }
+      await supabase.from('reports').update({ status:'action_taken' }).eq('id', b.dataset.report);
+      await loadAll();
+    }));
+    document.querySelectorAll('[data-dismiss]').forEach(b => b.addEventListener('click', async () => {
+      await supabase.from('reports').update({ status:'reviewed' }).eq('id', b.dataset.dismiss);
+      await loadAll();
+    }));
+  }
 
-  // If already logged in, redirect straight away
-  supabase.auth.getSession().then(async ({ data: { session } }) => {
-    loading.classList.add('hidden');
-    if (session && session.user){
-      showActionLoading('Aapka session mil gaya, khul raha hai…');
-      if (session.user.email === ADMIN_EMAIL){ window.location.href = 'admin.html'; return; }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
-      if (profile?.role === 'worker'){ window.location.href = 'worker.html'; }
-      else { window.location.href = 'shop.html'; }
-    } else {
-      authScreen.classList.remove('hidden');
-    }
-  });
+  await loadAll();
 }
 </script>
 </body>
