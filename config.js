@@ -1,5 +1,5 @@
-export const SUPABASE_URL = "https://wytriovphlaqohvspkbu.supabase.co";
-export const SUPABASE_ANON_KEY = "sb_publishable_I8JbMcnSnuV_AZLNR3Gl_A_LcE2T5iA";
+export const SUPABASE_URL = "https://gwcfjvbpgwmzmvvhahhl.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_Vzj9LwwhB32XxluzA2XhZg_1lHjCTy9";
 export const ADMIN_EMAIL = "vkvishalk67@gmail.com";
 
 export function logoSVG(size=34, dark=true){
