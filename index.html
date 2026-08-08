@@ -51,7 +51,13 @@
         </div>
         <div class="field">
           <label>Password</label>
-          <input type="password" id="f-password" required minlength="6" placeholder="••••••••" />
+          <div style="position:relative;">
+            <input type="password" id="f-password" required minlength="6" placeholder="••••••••" style="padding-right:70px;" />
+            <button type="button" id="toggle-password" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; padding:6px 8px; font-size:12px; color:var(--brass); font-weight:600;">Show</button>
+          </div>
+        </div>
+        <div id="forgot-password-wrap" style="text-align:right; margin-top:-8px; margin-bottom:14px;">
+          <button type="button" id="forgot-password-btn" style="background:none; color:var(--ink-soft); font-size:12px; text-decoration:underline;">Password bhool gaye?</button>
         </div>
 
         <div id="signup-only" class="hidden">
@@ -152,6 +158,31 @@ function runApp(){
     hideMsg();
   });
 
+  $('toggle-password').addEventListener('click', () => {
+    const pwd = $('f-password');
+    const showing = pwd.type === 'text';
+    pwd.type = showing ? 'password' : 'text';
+    $('toggle-password').textContent = showing ? 'Show' : 'Hide';
+  });
+
+  $('forgot-password-btn').addEventListener('click', async () => {
+    const email = $('f-email').value.trim();
+    if (!email){ showMsg('Pehle apni email likhein, phir "Password bhool gaye" dabayein.'); return; }
+    showActionLoading('Reset link bheja ja raha hai…');
+    try{
+      const { error } = await withTimeout(
+        supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname.replace('index.html','') + 'reset-password.html' }),
+        15000, 'Reset link bhejna'
+      );
+      hideActionLoading();
+      if (error) throw error;
+      showMsg('Reset link aapki email pe bhej diya gaya hai. Email check karein.', true);
+    } catch(err){
+      hideActionLoading();
+      showMsg(err.message || 'Reset link nahi bhej saka.');
+    }
+  });
+
   function withTimeout(promise, ms, label){
     return Promise.race([
       promise,
@@ -159,11 +190,17 @@ function runApp(){
     ]);
   }
 
+  let loadingShownAt = 0;
   function showActionLoading(text){
     $('action-loading-text').textContent = text;
     $('action-loading').classList.remove('hidden');
+    $('action-loading').style.display = 'flex';
+    loadingShownAt = Date.now();
   }
-  function hideActionLoading(){
+  async function hideActionLoading(){
+    const elapsed = Date.now() - loadingShownAt;
+    const minTime = 500;
+    if (elapsed < minTime){ await new Promise(r => setTimeout(r, minTime - elapsed)); }
     $('action-loading').classList.add('hidden');
   }
 
