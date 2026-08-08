@@ -12,6 +12,11 @@
 
 <div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
 
+<div id="action-loading" class="hidden" style="position:fixed; inset:0; background:rgba(243,235,221,0.92); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; z-index:998;">
+  <div class="spool"></div>
+  <div id="action-loading-text" style="font-size:14px; color:var(--navy); font-weight:600;">Login ho raha hai…</div>
+</div>
+
 <div class="center-screen hidden" id="auth-screen">
   <div style="width:100%; max-width:440px;">
     <div class="card">
@@ -89,7 +94,7 @@
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY, logoSVG, isValidCnic, normalizeCnic, checkCnicBlocked } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_EMAIL, logoSVG, isValidCnic, normalizeCnic, checkCnicBlocked } from './config.js';
 
 document.getElementById('logo-holder').innerHTML = logoSVG(44, true);
 
@@ -154,6 +159,14 @@ function runApp(){
     ]);
   }
 
+  function showActionLoading(text){
+    $('action-loading-text').textContent = text;
+    $('action-loading').classList.remove('hidden');
+  }
+  function hideActionLoading(){
+    $('action-loading').classList.add('hidden');
+  }
+
   $('auth-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     hideMsg();
@@ -161,8 +174,7 @@ function runApp(){
     const password = $('f-password').value;
     const btn = $('auth-submit');
     btn.disabled = true;
-    const originalText = btn.textContent;
-    btn.textContent = isSignup ? 'Sign Up ho raha hai…' : 'Login ho raha hai…';
+    showActionLoading(isSignup ? 'Sign Up ho raha hai…' : 'Login ho raha hai…');
 
     try{
       if (isSignup){
@@ -174,11 +186,11 @@ function runApp(){
         if (!isValidCnic(cnic)){ throw new Error('CNIC 13 digit ka hona chahiye.'); }
         if (!name || !phone || !area){ throw new Error('Sab required fields bharein.'); }
 
-        btn.textContent = 'CNIC check ho raha hai…';
+        showActionLoading('CNIC check ho raha hai…');
         const blocked = await withTimeout(checkCnicBlocked(supabase, cnic), 15000, 'CNIC check');
         if (blocked){ throw new Error('Ye account create nahi ho sakta. Support se rabta karein.'); }
 
-        btn.textContent = 'Account ban raha hai…';
+        showActionLoading('Account ban raha hai…');
         const { data: signUpData, error } = await withTimeout(supabase.auth.signUp({ email, password }), 15000, 'Sign up');
         if (error) throw error;
 
@@ -196,7 +208,7 @@ function runApp(){
             subscription_status: role === 'shop' ? 'trial' : 'active',
             trial_end: role === 'shop' ? trialEnd.toISOString().split('T')[0] : null,
           };
-          btn.textContent = 'Profile save ho raha hai…';
+          showActionLoading('Profile save ho raha hai…');
           const { error: profErr } = await withTimeout(supabase.from('profiles').upsert(profilePayload), 15000, 'Profile save');
           if (profErr) throw profErr;
 
@@ -204,23 +216,25 @@ function runApp(){
             await withTimeout(supabase.from('worker_details').upsert({ worker_id: signUpData.user.id, availability: 'Available' }), 15000, 'Worker details save');
           }
         }
+        hideActionLoading();
         showMsg('Account ban gaya! Ab login karein.', true);
         isSignup = false;
         $('auth-switch-btn').click();
         $('auth-form').reset();
       } else {
-        btn.textContent = 'Sign in ho raha hai…';
+        showActionLoading('Sign in ho raha hai…');
         const { data, error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 15000, 'Login');
         if (error) throw error;
-        if (data.user.email === ADMIN_EMAIL){ window.location.href = 'admin.html'; return; }
-        btn.textContent = 'Profile load ho raha hai…';
+        if (data.user.email === ADMIN_EMAIL){ showActionLoading('Admin panel khul raha hai…'); window.location.href = 'admin.html'; return; }
+        showActionLoading('Profile load ho raha hai…');
         const { data: profile } = await withTimeout(supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle(), 15000, 'Profile load');
+        showActionLoading('Dashboard khul raha hai…');
         if (profile?.role === 'worker'){ window.location.href = 'worker.html'; }
         else { window.location.href = 'shop.html'; }
       }
     } catch(err){
+      hideActionLoading();
       showMsg(err.message || 'Kuch ghalat hua, dobara koshish karein.');
-      btn.textContent = originalText;
     } finally {
       btn.disabled = false;
     }
@@ -230,6 +244,7 @@ function runApp(){
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     loading.classList.add('hidden');
     if (session && session.user){
+      showActionLoading('Aapka session mil gaya, khul raha hai…');
       if (session.user.email === ADMIN_EMAIL){ window.location.href = 'admin.html'; return; }
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
       if (profile?.role === 'worker'){ window.location.href = 'worker.html'; }
