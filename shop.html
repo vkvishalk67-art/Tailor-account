@@ -52,6 +52,7 @@
         <button data-view="fields">📏 Measurement Fields</button>
         <button data-view="workers">🔍 Find Workers</button>
         <button data-view="billing">💳 Billing</button>
+        <button data-view="profile">👤 Meri Profile</button>
       </div>
       <button class="logout-btn" id="logout-btn">↩ Logout</button>
     </aside>
@@ -101,6 +102,19 @@
       <div id="view-billing" class="hidden">
         <div class="main-header"><div><h2 class="main-title">Billing</h2><p class="main-sub">Aapki subscription ki tafseel</p></div></div>
         <div id="billing-info" class="tag-card" style="max-width:420px;"></div>
+      </div>
+
+      <!-- ===== PROFILE VIEW ===== -->
+      <div id="view-profile" class="hidden">
+        <div class="main-header"><div><h2 class="main-title">Meri Profile</h2><p class="main-sub">Apni shop ki details update karein</p></div></div>
+        <form id="profile-form" class="tag-card" style="max-width:480px;">
+          <div class="field"><label>Shop Name</label><input type="text" id="p-name" required /></div>
+          <div class="field"><label>Phone</label><input type="text" id="p-phone" required /></div>
+          <div class="field"><label>Area/Sheher</label><input type="text" id="p-area" required /></div>
+          <div class="field"><label>Email</label><input type="email" id="p-email" required /><small>Email badalne ke baad naye email pe confirmation link jayega</small></div>
+          <div id="profile-msg" class="hidden msg" style="margin-top:6px;"></div>
+          <button type="submit" class="btn-primary" style="margin-top:8px;">Save Changes</button>
+        </form>
       </div>
     </main>
   </div>
@@ -226,12 +240,46 @@ async function runApp(){
     btn.addEventListener('click', () => {
       document.querySelectorAll('.side-nav button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      ['customers','fields','workers','billing'].forEach(v => {
+      ['customers','fields','workers','billing','profile'].forEach(v => {
         document.getElementById('view-'+v).classList.toggle('hidden', v !== btn.dataset.view);
       });
       if (btn.dataset.view === 'workers') loadWorkers();
       if (btn.dataset.view === 'billing') renderBilling();
+      if (btn.dataset.view === 'profile') loadProfileForm();
     });
+  });
+
+  function loadProfileForm(){
+    $('p-name').value = profile.full_name || '';
+    $('p-phone').value = profile.phone || '';
+    $('p-area').value = profile.area || '';
+    $('p-email').value = currentUser.email || '';
+  }
+
+  $('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = $('profile-msg'); msg.classList.add('hidden');
+    const newEmail = $('p-email').value.trim();
+    try{
+      await supabase.from('profiles').update({
+        full_name: $('p-name').value.trim(),
+        phone: $('p-phone').value.trim(),
+        area: $('p-area').value.trim(),
+      }).eq('id', currentUser.id);
+      profile.full_name = $('p-name').value.trim();
+
+      if (newEmail !== currentUser.email){
+        const { error } = await supabase.auth.updateUser({ email: newEmail });
+        if (error) throw error;
+        msg.textContent = 'Details save ho gayin. Naye email pe confirmation link bheja gaya hai — usay click karke email confirm karein.';
+      } else {
+        msg.textContent = 'Details save ho gayin.';
+      }
+      msg.classList.remove('hidden'); msg.classList.add('success');
+    } catch(err){
+      msg.textContent = err.message || 'Error aayi, dobara try karein.';
+      msg.classList.remove('hidden'); msg.classList.remove('success');
+    }
   });
 
   $('logout-btn').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href='index.html'; });
