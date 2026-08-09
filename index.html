@@ -9,93 +9,91 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
 <div id="app-loading"><div class="spool"></div><div style="font-size:13px;color:var(--ink-soft)">Loading…</div></div>
-
 <div id="action-loading" class="hidden" style="position:fixed; inset:0; background:rgba(243,235,221,0.92); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; z-index:998;">
-  <div class="spool"></div>
-  <div id="action-loading-text" style="font-size:14px; color:var(--navy); font-weight:600;">Login ho raha hai…</div>
+<div class="spool"></div>
+<div id="action-loading-text" style="font-size:14px; color:var(--navy); font-weight:600;">Login ho raha hai…</div>
 </div>
 
 <div class="center-screen hidden" id="auth-screen">
-  <div style="width:100%; max-width:440px;">
-    <div class="card">
-      <div class="logo-mark" id="logo-holder"></div>
-      <div class="eyebrow" style="text-align:center">Darzi Khata</div>
-      <h1 class="title" id="auth-title" style="text-align:center">Khush Aamdeed</h1>
-      <p class="subtitle" id="auth-sub" style="text-align:center">Pehle apna account type chunein</p>
+<div style="width:100%; max-width:440px;">
+<div class="card">
+<div class="logo-mark" id="logo-holder"></div>
+<div class="eyebrow" style="text-align:center">Darzi Khata</div>
+<h1 class="title" id="auth-title" style="text-align:center">Khush Aamdeed</h1>
+<p class="subtitle" id="auth-sub" style="text-align:center">Pehle apna account type chunein</p>
 
-      <div id="auth-msg" class="msg hidden"></div>
+<div id="auth-msg" class="msg hidden"></div>
 
-      <!-- Role selection (shown before login/signup form) -->
-      <div id="role-select">
-        <div class="role-choice">
-          <button type="button" class="role-btn" id="pick-shop">
-            <div class="ic">🧵</div>
-            <div class="lbl">Shop Owner</div>
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Dukan chalata hoon</div>
-          </button>
-          <button type="button" class="role-btn" id="pick-worker">
-            <div class="ic">✂️</div>
-            <div class="lbl">Karigar / Worker</div>
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Kaam ki talash hai</div>
-          </button>
-        </div>
-      </div>
+<!-- Role selection (shown before login/signup form) -->
+<div id="role-select">
+<div class="role-choice">
+<button type="button" class="role-btn" id="pick-shop">
+<div class="ic">🧵</div>
+<div class="lbl">Shop Owner</div>
+<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Dukan chalata hoon</div>
+</button>
+<button type="button" class="role-btn" id="pick-worker">
+<div class="ic">✂️</div>
+<div class="lbl">Karigar / Worker</div>
+<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Kaam ki talash hai</div>
+</button>
+</div>
+</div>
 
-      <!-- Auth form (shown after role picked) -->
-      <form id="auth-form" class="hidden">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="f-email" required placeholder="aap@example.com" />
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <div style="position:relative;">
-            <input type="password" id="f-password" required minlength="6" placeholder="••••••••" style="padding-right:70px;" />
-            <button type="button" id="toggle-password" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; padding:6px 8px; font-size:12px; color:var(--brass); font-weight:600;">Show</button>
-          </div>
-        </div>
-        <div id="forgot-password-wrap" style="text-align:right; margin-top:-8px; margin-bottom:14px;">
-          <button type="button" id="forgot-password-btn" style="background:none; color:var(--ink-soft); font-size:12px; text-decoration:underline;">Password bhool gaye?</button>
-        </div>
+<!-- Auth form (shown after role picked) -->
+<form id="auth-form" class="hidden">
+<div class="field">
+<label>Email</label>
+<input type="email" id="f-email" required placeholder="aap@example.com" />
+</div>
+<div class="field">
+<label>Password</label>
+<div style="position:relative;">
+<input type="password" id="f-password" required minlength="6" placeholder="••••••••" style="padding-right:70px;" />
+<button type="button" id="toggle-password" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; padding:6px 8px; font-size:12px; color:var(--brass); font-weight:600;">Show</button>
+</div>
+</div>
+<div id="forgot-password-wrap" style="text-align:right; margin-top:-8px; margin-bottom:14px;">
+<button type="button" id="forgot-password-btn" style="background:none; color:var(--ink-soft); font-size:12px; text-decoration:underline;">Password bhool gaye?</button>
+</div>
 
-        <div id="signup-only" class="hidden">
-          <div class="field">
-            <label id="name-label">Shop Name</label>
-            <input type="text" id="f-name" placeholder="" />
-          </div>
-          <div class="field">
-            <label>Phone Number *</label>
-            <input type="text" id="f-phone" placeholder="03XX-XXXXXXX" required />
-          </div>
-          <div class="field">
-            <label>CNIC Number *</label>
-            <input type="text" id="f-cnic" placeholder="XXXXX-XXXXXXX-X" required maxlength="15" />
-            <small>Sirf record ke liye, kisi ko nahi dikhega</small>
-          </div>
-          <div class="field">
-            <label>Area / Sheher *</label>
-            <input type="text" id="f-area" placeholder="e.g. Gulshan, Karachi" required />
-            <small>Exact address nahi — sirf area/sheher, safety ke liye</small>
-          </div>
-        </div>
+<div id="signup-only" class="hidden">
+<div class="field">
+<label id="name-label">Shop Name</label>
+<input type="text" id="f-name" placeholder="" />
+</div>
+<div class="field">
+<label>Phone Number *</label>
+<input type="text" id="f-phone" placeholder="03XX-XXXXXXX" />
+</div>
+<div class="field">
+<label>CNIC Number *</label>
+<input type="text" id="f-cnic" placeholder="XXXXX-XXXXXXX-X" maxlength="15" />
+<small>Sirf record ke liye, kisi ko nahi dikhega</small>
+</div>
+<div class="field">
+<label>Area / Sheher *</label>
+<input type="text" id="f-area" placeholder="e.g. Gulshan, Karachi" />
+<small>Exact address nahi — sirf area/sheher, safety ke liye</small>
+</div>
+</div>
 
-        <button type="submit" class="btn-primary" id="auth-submit">Login</button>
-        <button type="button" class="btn-secondary" id="back-to-role" style="width:100%;margin-top:10px">← Wapis</button>
-      </form>
+<button type="submit" class="btn-primary" id="auth-submit">Login</button>
+<button type="button" class="btn-secondary" id="back-to-role" style="width:100%;margin-top:10px">← Wapis</button>
+</form>
 
-      <div class="hidden" style="text-align:center;margin-top:18px;font-size:13px;color:var(--ink-soft)" id="auth-switch-wrap">
-        <span id="auth-switch-text">Naya account banana hai?</span>
-        <button id="auth-switch-btn" type="button" style="background:none;color:var(--brass);font-weight:600;text-decoration:underline">Sign Up</button>
-      </div>
-    </div>
+<div class="hidden" style="text-align:center;margin-top:18px;font-size:13px;color:var(--ink-soft)" id="auth-switch-wrap">
+<span id="auth-switch-text">Naya account banana hai?</span>
+<button id="auth-switch-btn" type="button" style="background:none;color:var(--brass);font-weight:600;text-decoration:underline">Sign Up</button>
+</div>
+</div>
 
-    <p style="max-width:440px;margin:16px auto 0;font-size:11.5px;color:var(--ink-soft);text-align:center;line-height:1.6">
-      Sign up karke aap hamare <a href="terms.html" style="color:var(--brass);text-decoration:underline">Terms & Conditions</a> se ittefaq karte hain.
-    </p>
-    <p class="hidden" id="setup-note" style="max-width:440px;margin:10px auto 0;font-size:12px;color:var(--thread-red);text-align:center;line-height:1.6"></p>
-  </div>
+<p style="max-width:440px;margin:16px auto 0;font-size:11.5px;color:var(--ink-soft);text-align:center;line-height:1.6">
+Sign up karke aap hamare <a href="terms.html" style="color:var(--brass);text-decoration:underline">Terms & Conditions</a> se ittefaq karte hain.
+</p>
+<p class="hidden" id="setup-note" style="max-width:440px;margin:10px auto 0;font-size:12px;color:var(--thread-red);text-align:center;line-height:1.6"></p>
+</div>
 </div>
 
 <script type="module">
@@ -128,6 +126,14 @@ function runApp(){
   }
   function hideMsg(){ $('auth-msg').classList.add('hidden'); }
 
+  // Keeps hidden signup-only fields from blocking the Login form submit
+  function syncRequiredFields(){
+    const active = isSignup;
+    $('f-phone').required = active;
+    $('f-cnic').required = active;
+    $('f-area').required = active;
+  }
+
   function selectRole(r){
     role = r;
     $('role-select').classList.add('hidden');
@@ -136,7 +142,9 @@ function runApp(){
     $('name-label').textContent = r === 'shop' ? 'Shop Name' : 'Aapka Poora Naam';
     $('f-name').placeholder = r === 'shop' ? 'e.g. Al-Karam Tailors' : 'e.g. Ahmed Ali';
     $('auth-sub').textContent = r === 'shop' ? 'Shop Owner ke liye' : 'Karigar/Worker ke liye';
+    syncRequiredFields();
   }
+
   $('pick-shop').addEventListener('click', () => selectRole('shop'));
   $('pick-worker').addEventListener('click', () => selectRole('worker'));
 
@@ -155,6 +163,7 @@ function runApp(){
     $('auth-switch-text').textContent = isSignup ? 'Pehle se account hai?' : 'Naya account banana hai?';
     $('auth-switch-btn').textContent = isSignup ? 'Login' : 'Sign Up';
     $('signup-only').classList.toggle('hidden', !isSignup);
+    syncRequiredFields();
     hideMsg();
   });
 
@@ -212,25 +221,20 @@ function runApp(){
     const btn = $('auth-submit');
     btn.disabled = true;
     showActionLoading(isSignup ? 'Sign Up ho raha hai…' : 'Login ho raha hai…');
-
     try{
       if (isSignup){
         const name = $('f-name').value.trim();
         const phone = $('f-phone').value.trim();
         const cnic = $('f-cnic').value.trim();
         const area = $('f-area').value.trim();
-
         if (!isValidCnic(cnic)){ throw new Error('CNIC 13 digit ka hona chahiye.'); }
         if (!name || !phone || !area){ throw new Error('Sab required fields bharein.'); }
-
         showActionLoading('CNIC check ho raha hai…');
         const blocked = await withTimeout(checkCnicBlocked(supabase, cnic), 15000, 'CNIC check');
         if (blocked){ throw new Error('Ye account create nahi ho sakta. Support se rabta karein.'); }
-
         showActionLoading('Account ban raha hai…');
         const { data: signUpData, error } = await withTimeout(supabase.auth.signUp({ email, password }), 15000, 'Sign up');
         if (error) throw error;
-
         if (signUpData.user){
           const trialEnd = new Date();
           trialEnd.setDate(trialEnd.getDate() + 30);
@@ -248,7 +252,6 @@ function runApp(){
           showActionLoading('Profile save ho raha hai…');
           const { error: profErr } = await withTimeout(supabase.from('profiles').upsert(profilePayload), 15000, 'Profile save');
           if (profErr) throw profErr;
-
           if (role === 'worker'){
             await withTimeout(supabase.from('worker_details').upsert({ worker_id: signUpData.user.id, availability: 'Available' }), 15000, 'Worker details save');
           }
